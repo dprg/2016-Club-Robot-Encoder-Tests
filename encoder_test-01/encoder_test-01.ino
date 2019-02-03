@@ -12,8 +12,8 @@
 
    Using the wiring harness that came with the motor used
    on the DPRG club robot the connections are:
-   Black - motor shield A1
-   Green - motor shield B1
+   Black - motor shield A2
+   Green - motor shield B2
    Red - either 5v or 3.3v
    Orange - ground
    Yellow (encoder ch A) - Arduino Mega pin 21 (INT0)
@@ -28,10 +28,22 @@
    Expected behavior:
    Right motor (looking from rear of robot) should pause, move CW
    10 revolutions, pause, move CCW 10 revolutions,pause, then
-   repeat pattern. Use tape on wheel to track wheel movement. Using
-   the Serial Monitor window of the Arduino environment, the encoder
-   counts should go from 0 to ~32920, then back to ~0.
+   repeat pattern. Use tape on wheel to track wheel movement. 
+   In other words, CW turning is defined when looking along the axis of the motor,
+   with the body of the motor between you and the enecoder 
+   Using the Serial Monitor window of the Arduino environment, when turning CW,
+   encoder counts should increase from 0 to positive ~32920, then back down to ~0. 
+   Note that counts are not exact because the encoder tally is polled for viewing, 
+   even though it is or should be relatively accuratly generated with interrupt driven 
+   scheme used by the encoder library which maintains the tally.
    
+   Motor Polarity Problem:
+   On some motors, the encoder is mounted 180 degrees opposite of motors assembled with the typical convention.
+   This yields the effect that the same sofware commands and wiring harness which normally 
+   produce CW rotation actually produce CCW rotation. In such cases, if you are not equipped
+   to desolder and rotate the encoder, consider simply flipping
+   the motor polarity in software or the wiring harness for the offending motor,
+     
    Encoder Problem:
    If the wheel doesn't turn 10 revolutions during the test or the
    encoders counts are way off, you have an encoder issue.
@@ -77,11 +89,14 @@ int oneRev = 3292;   // Full Quadrature encoder cnts for one rev
 int flgs = 0;
 int reachedTarget = 0;
 int rotationDir = CW;
-char motorSpd = 48;
+char motorSpd = 20;   //slow enough to count and avoid inertia driven motion
+                      //too slow and motor stalls.  
+                      //too fast and inertia makes it difficult to count & difficult to see when the motor drive stops
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Basic Encoder Test:");
+  Serial.println("Start by turning CW...");
   
   // motor shield pin setup
   pinMode(statpin, OUTPUT);
@@ -116,16 +131,16 @@ void loop() {
   //motorGo(0, rotationDir, motorSpd);
   motorGo(1, rotationDir, motorSpd);
 
-  if ((newPosition <= ((long)oneRev * -10)) && (flgs == 0)){ 
-  //if ((newPosition >= ((long)oneRev * 10)) && (flgs == 0)){ 
-   Serial.println("CW");
+  //if ((newPosition <= ((long)oneRev * -10)) && (flgs == 0)){    // backwards motor wiring
+  if ((newPosition >= ((long)oneRev * 10)) && (flgs == 0)){       // normal motor wiring
+   Serial.println("finished turning CW");
    reachedTarget = 1;
   }
 
-  if ((newPosition >= 0) && (flgs == 1)){
-  //if ((newPosition <= 0) && (flgs == 1)){   
+  //if ((newPosition >= 0) && (flgs == 1)){  // backwards motor wiring
+  if ((newPosition <= 0) && (flgs == 1)){    // normal motor wiring
     reachedTarget = 1;
-    Serial.println("CCW");
+    Serial.println("finished turning CCW");
   }
 
   if (reachedTarget == 1){
@@ -138,10 +153,12 @@ void loop() {
     if (flgs == 0){
       flgs = 1;
       rotationDir = CCW;
+      Serial.println("- reached target - now turning CCW");
     }
     else if (flgs == 1){
       flgs = 0;
       rotationDir = CW;
+      Serial.println("- reached target - now turning CW");
     }
     delay(5000);
   }
@@ -203,5 +220,3 @@ void motorGo(uint8_t motor, uint8_t direct, uint8_t pwm)
   }
 }
  
-
-
