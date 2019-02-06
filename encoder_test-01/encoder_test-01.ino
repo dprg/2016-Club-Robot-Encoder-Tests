@@ -33,10 +33,12 @@
    with the body of the motor between you and the enecoder 
    Using the Serial Monitor window of the Arduino environment, when turning CW,
    encoder counts should increase from 0 to positive ~32920, then back down to ~0. 
-   Note that counts are not exact because the encoder tally is polled for viewing, 
-   even though it is or should be relatively accuratly generated with interrupt driven 
-   scheme used by the encoder library which maintains the tally.
-   
+   Note that counts may not be exact for several reasons. For example, issues with 
+   the encoder sensors may lead to missed counts. Also, this program polls the encoder tally.
+   At typical motor speeds, this program is not able to read the encoder tally
+   as often as it changes.  However, the library which maintains the encoder tally is
+   interrupt driven, and should be able to keep up.
+
    Motor Polarity Problem:
    On some motors, the encoder is mounted 180 degrees opposite of motors assembled with the typical convention.
    This yields the effect that the same sofware commands and wiring harness which normally 
